@@ -1,7 +1,36 @@
-# RAG with Kubernetes Docs — Runbook
+Improve the **precision of RAG (Retrieval-Augmented Generation)** using cross-encoders to rerank semantically retrieved documents.
+
+> **Use case:** You’ve embedded your docs and built a vector search pipeline. But your top-k hits are still noisy. That’s because standard bi-encoder RAG often retrieves *relevant-looking garbage*. This repo injects a cross-encoder scoring step to **rerank results using deeper semantic understanding**, improving downstream LLM output.
+
 ![Using Cross Encoders to refine ranking on retrieved results](./assets/cross-encoder.png)
 
-## ✅ Prerequisites for Local Run
+---
+
+## ⚙️ What This Repo Does
+
+- ✅ Extracts technical passages from the official Kubernetes docs  
+- ✅ Builds a FAISS index with dense vector search  
+- ✅ Fine-tunes a **cross-encoder** on query–passage pairs  
+- ✅ Uses the cross-encoder to **rerank** RAG results before LLM inference  
+- ✅ Fully containerized: each step runnable via Docker  
+- ✅ Local dev support for faster iteration
+
+---
+
+## 🔥 Why Use a Cross-Encoder?
+
+Most vector databases retrieve results based on **bi-encoder** similarity—fast, scalable, and imprecise.
+
+A **cross-encoder**, in contrast, evaluates the relevance of a *(query, passage)* pair by jointly encoding both with full attention. That gives you **high-precision reranking** at the cost of throughput—perfect for reordering top-k hits before LLM use.
+
+> Example:
+> - Query: *"How do I create a Kubernetes Job?"*
+> - Bi-encoder top-3: irrelevant references to CronJobs and DaemonSets
+> - Cross-encoder reranking: pushes the actual Job creation doc to top-1
+
+---
+
+## 🧪 Prerequisites for Local Run
 
 Create and activate a virtual environment:
 
@@ -9,8 +38,6 @@ Create and activate a virtual environment:
 python3 -m venv .rag-env
 source .rag-env/bin/activate
 pip install --upgrade pip
-```
-
 Install dependencies:
 
 ```bash
