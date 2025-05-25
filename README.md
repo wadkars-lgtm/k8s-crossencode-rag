@@ -158,3 +158,19 @@ python query_faiss_index.py
 ```
 
 ---
+
+## ⚙️ Tech Note: No LangChain Used
+
+This pipeline is implemented **without LangChain**.
+
+All stages—embedding, FAISS indexing, cross-encoder reranking, and inference—are built directly using:
+
+- [`sentence-transformers`](https://www.sbert.net/) for embedding and cross-encoding  
+- [`faiss`](https://github.com/facebookresearch/faiss) for efficient similarity search  
+- Standard Python for data I/O and orchestration  
+
+> **Why avoid LangChain?**  
+> To maintain **full transparency**, **tight control**, and **zero framework lock-in**.  
+> This approach avoids unnecessary abstraction and makes it easier to debug, extend, or integrate into custom pipelines.
+
+LangChain is useful for chaining tools or building agent-style flows, but here it's intentionally omitted to keep the system **lightweight, debuggable, and infrastructure-ready**.
