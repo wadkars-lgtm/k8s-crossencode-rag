@@ -1,169 +1,126 @@
-Improve the **precision of RAG (Retrieval-Augmented Generation)** using cross-encoders to rerank semantically retrieved documents.
+# 🎯 Precision RAG with Cross-Encoders — Basic Example
 
-> **Use case:** You’ve embedded your docs and built a vector search pipeline. But your top-k hits are still noisy. That’s because standard bi-encoder RAG often retrieves *relevant-looking garbage*. This repo injects a cross-encoder scoring step to **rerank results using deeper semantic understanding**, improving downstream LLM output.
+Improve the **precision of Retrieval-Augmented Generation (RAG)** by using cross-encoders to rerank retrieved passages. This repo provides a working example of how cross-encoding dramatically improves semantic filtering **after initial dense retrieval.**
+
+> **Why this matters:**  
+> You’ve embedded your documents and built a vector search pipeline. But your top-k hits are still noisy. That’s because standard bi-encoder RAG often retrieves *relevant-looking garbage*.  
+> This example uses a cross-encoder scoring step to rerank results using **joint semantic attention**, improving downstream LLM output.
 
 ![Using Cross Encoders to refine ranking on retrieved results](./assets/cross-encoder.png)
 
 ---
 
-## ⚙️ What This Repo Does
+## 🔧 Prerequisites for Local Run
 
-- ✅ Extracts technical passages from the official Kubernetes docs  
-- ✅ Builds a FAISS index with dense vector search  
-- ✅ Fine-tunes a **cross-encoder** on query–passage pairs  
-- ✅ Uses the cross-encoder to **rerank** RAG results before LLM inference  
-- ✅ Fully containerized: each step runnable via Docker  
-- ✅ Local dev support for faster iteration
+### 1. Create and activate a Python virtual environment:
 
----
-
-## 🔥 Why Use a Cross-Encoder?
-
-Most vector databases retrieve results based on **bi-encoder** similarity—fast, scalable, and imprecise.
-
-A **cross-encoder**, in contrast, evaluates the relevance of a *(query, passage)* pair by jointly encoding both with full attention. That gives you **high-precision reranking** at the cost of throughput—perfect for reordering top-k hits before LLM use.
-
-> Example:
-> - Query: *"How do I create a Kubernetes Job?"*
-> - Bi-encoder top-3: irrelevant references to CronJobs and DaemonSets
-> - Cross-encoder reranking: pushes the actual Job creation doc to top-1
-
----
-
-## 🧪 Prerequisites for Local Run
-
-Create and activate a virtual environment:
-
-```bash
+```
 python3 -m venv .rag-env
 source .rag-env/bin/activate
 pip install --upgrade pip
-Install dependencies:
+```
 
-```bash
+### 2. Install dependencies:
+
+```
 pip install "transformers[torch]" sentence-transformers faiss-cpu
 ```
 
 ---
 
-## 📥 Download Kubernetes Documentation
+## 🧪 Run a Minimal Cross-Encoder Reranking Demo
 
-Clone the docs repository:
+This script scores two passages against a query using both **bi-encoder similarity** and **cross-encoder relevance.**
 
-```bash
-export GIT_LOCAL_FOLDER=~/Documents
-cd ${GIT_LOCAL_FOLDER}
-git clone https://github.com/kubernetes/website.git
-cd website/content/en/docs
+```
+export TRANSFORMERS_NO_TF=1
+python basic_cross_encoding_example.py
 ```
 
-Set the environment variable:
-
-```bash
-export DOCS_HOME_FOLDER=${GIT_LOCAL_FOLDER}
-# Final path to docs: ${DOCS_HOME_FOLDER}/website/content/en/docs
+### Sample Output:
 ```
+Passage 1: Click on 'Forgot Password' on the login screen
+  Bi-encoder score         : 0.6340
+  Cross-encoder logit      : -2.2566
+  Cross-encoder expit prob : 0.0948
+
+Passage 2: Use a strong password with numbers and symbols
+  Bi-encoder score         : 0.3121
+  Cross-encoder logit      : -7.4544
+  Cross-encoder expit prob : 0.0006
+```
+
+> In this case, Passage 1 is **150x more relevant** than Passage 2 by cross-encoder probability.  
+> But 0.0948 is still a low absolute score—this means the passage is only **somewhat** relevant.
 
 ---
 
-> ⚠️ **Apple Silicon Users (M1/M2):**  
-> Some steps may fail on ARM architecture due to missing binary support.  
-> To run AMD64 Docker containers, install Rosetta 2:
+## 🧭 Decision Flow Using Cross-Encoder Output
 
-```bash
-/usr/sbin/softwareupdate --install-rosetta --agree-to-license
-```
+Here’s how you might use this reranking in production:
 
-This enables support for x86/amd64 binaries within Docker and ensures compatibility with many Python and ML libraries that do not yet support ARM64 natively.
+1. ✅ If the top-ranked passage is **above a threshold**, pass it to the LLM for generation.
+2. ⚠️ If all scores are below threshold, **fallback to traditional search** or notify the user.
+3. 🛠️ If results are consistently poor, **augment the vector DB with better documents.**
 
 ---
 
-> ✅ The following steps **can** be run on ARM architecture without Docker:
-> - Creating a JSON file of passages
-> - Creating a FAISS Index
+## 🧬 Full Retrieval → Rerank → LLM Example
+
+The more complete pipeline is in `detailed_cross_encoding_example.py`. It:
+
+- Embeds and indexes 21 documents
+- Retrieves top-5 passages using a bi-encoder
+- Reranks using a cross-encoder with an expit threshold of `0.2`
+- Runs LLM generation *only if* sufficient relevance is found
+
+### Run it:
+
+```
+export TRANSFORMERS_NO_TF=1
+python detailed_cross_encoding_example.py
+```
+
+### Sample Output:
+Includes multiple queries and end-to-end flow with example LLM prompts and output.
+
+> Queries that work well:
+> - “tell me about canines”  
+> - “AI and language processing”  
+> - “what are small weasels”
+
+> Queries that fail:
+> - “unrelated query about astrophysics”  
+> - “how do you handle special characters...”
+
+You’ll see that **irrelevant results are filtered out entirely**, preventing garbage input to the LLM.
 
 ---
 
-## 🔨 Workflow
+## 📊 Why This Matters
 
-You can run each step either using **Docker** or **locally**.
+This basic demo shows you what most RAG systems lack:
+- A *second pass* to filter out semantically weak hits  
+- A numerical way to tune relevance thresholds  
+- A pathway to stop hallucination by stopping retrieval at the gate
 
----
-
-### 1️⃣ Create JSON File of Passages
-
-**Using Docker:**
-
-```bash
-docker build --platform=linux/amd64 -f CreatePassagesDockerfile -t createpassages .
-docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createpassages
-```
-
-**Run Locally:**
-
-```bash
-export BASE_FOLDER=${DOCS_HOME_FOLDER}
-python create_k8s_packages_json.py
-```
+> Use this as a building block for more advanced cross-encoder + LLM pipelines, especially in **high-accuracy domains** like legal, finance, and healthcare.
 
 ---
 
-### 2️⃣ Create FAISS Index
+## 🧠 TL;DR
 
-**Using Docker:**
-
-```bash
-docker build --platform=linux/amd64 -f CreateFAISSIndexDockerfile -t createfaissindex .
-docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createfaissindex
-```
-
-**Run Locally:**
-
-```bash
-export BASE_FOLDER=${DOCS_HOME_FOLDER}
-python faiss_index.py
-```
+Embedding-based retrieval is fast.  
+Cross-encoder reranking is precise.  
+This example shows you how to use both—and when to bail out completely.
 
 ---
 
-### 3️⃣ Fine-tune Cross Encoder
+## 🧵 Next Steps
 
-**Using Docker:**
+- 🔗 Want a full RAG pipeline on Kubernetes with Bedrock, LangChain, and containerized stages?  
+  👉 Check out the full project here: [github.com/wadkars-lgtm/k8s-crossencode-rag](https://github.com/wadkars-lgtm/k8s-crossencode-rag)
 
-```bash
-docker build --platform=linux/amd64 -f FineTuneCrossEncoderDockerfile -t cross-encoder-tuning-runner .
-docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data cross-encoder-tuning-runner
-```
-
-**Run Locally:**
-
-This may lead to segmentation faults on Mac
-```bash
-
-export BASE_FOLDER=${DOCS_HOME_FOLDER}
-python fine_tune_cross_encoder.py
-```
-
----
-
-### 4️⃣ Run RAG with Cross Encoder and LLM
-
-**Using Docker:**
-
-```bash
-docker build --platform=linux/amd64 -f RAGCrossEncodeLLMDockerfile -t rag-runner .
-docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data rag-runner
-```
-
-
-**Run Locally:**
-
-This may lead to segmentation faults on Mac
-
-```bash
-
-export BASE_FOLDER=${DOCS_HOME_FOLDER}
-python query_faiss_index.py
-```
+- 💬 Questions, ideas, or feedback? Feel free to open an issue or connect via [LinkedIn](https://www.linkedin.com/in/sameer-wadkar/)
 
 ---
