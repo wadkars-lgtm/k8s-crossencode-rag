@@ -29,6 +29,24 @@ A **cross-encoder**, in contrast, evaluates the relevance of a *(query, passage)
 > - Cross-encoder reranking: pushes the actual Job creation doc to top-1
 
 ---
+## 📚 Related Article
+
+Want to understand the **why** behind this code?
+
+Check out the accompanying article on Substack:
+
+> **🧠 When and Why to Use Shared vs. Separate Encoders**  
+> [https://sameerwadkar.substack.com/p/when-and-why-to-use-shared-vs-separate](https://sameerwadkar.substack.com/p/when-and-why-to-use-shared-vs-separate)
+
+This article explains:
+- Why general-purpose embeddings often fall short in technical or niche domains  
+- How cross-encoders improve the precision of RAG systems through semantic reranking  
+- When to apply thresholding to detect irrelevant retrievals  
+- Why fine-tuning a cross-encoder is often a more efficient solution than retraining bi-encoders
+
+This repository puts those ideas into practice using Kubernetes documentation as a real-world use case.
+
+---
 
 ## 🧪 Prerequisites for Local Run
 
