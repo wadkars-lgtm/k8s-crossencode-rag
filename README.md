@@ -75,7 +75,6 @@ docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createpassa
 **Run Locally:**
 
 ```bash
-cd k8s-docs-based-example
 export BASE_FOLDER=${DOCS_HOME_FOLDER}
 python create_k8s_packages_json.py
 ```
@@ -94,7 +93,6 @@ docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createfaiss
 **Run Locally:**
 
 ```bash
-cd k8s-docs-based-example
 export BASE_FOLDER=${DOCS_HOME_FOLDER}
 python faiss_index.py
 ```
@@ -114,7 +112,7 @@ docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data cross-encod
 
 This may lead to segmentation faults on Mac
 ```bash
-cd k8s-docs-based-example
+
 export BASE_FOLDER=${DOCS_HOME_FOLDER}
 python fine_tune_cross_encoder.py
 ```
@@ -136,7 +134,7 @@ docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data rag-runner
 This may lead to segmentation faults on Mac
 
 ```bash
-cd k8s-docs-based-example
+
 export BASE_FOLDER=${DOCS_HOME_FOLDER}
 python query_faiss_index.py
 ```
