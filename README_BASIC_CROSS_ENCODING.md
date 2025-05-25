@@ -34,7 +34,7 @@ This script scores two passages against a query using both **bi-encoder similari
 
 ```
 export TRANSFORMERS_NO_TF=1
-python basic_cross_encoding_example.py
+python scripts/basic_cross_encoding_example.py
 ```
 
 ### Sample Output:
@@ -78,7 +78,7 @@ The more complete pipeline is in `detailed_cross_encoding_example.py`. It:
 
 ```
 export TRANSFORMERS_NO_TF=1
-python detailed_cross_encoding_example.py
+python scripts/detailed_cross_encoding_example.py
 ```
 
 ### Sample Output:
