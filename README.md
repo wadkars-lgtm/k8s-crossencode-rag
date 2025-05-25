@@ -1,1 +1,169 @@
-README.md
+Improve the **precision of RAG (Retrieval-Augmented Generation)** using cross-encoders to rerank semantically retrieved documents.
+
+> **Use case:** You’ve embedded your docs and built a vector search pipeline. But your top-k hits are still noisy. That’s because standard bi-encoder RAG often retrieves *relevant-looking garbage*. This repo injects a cross-encoder scoring step to **rerank results using deeper semantic understanding**, improving downstream LLM output.
+
+![Using Cross Encoders to refine ranking on retrieved results](./assets/cross-encoder.png)
+
+---
+
+## ⚙️ What This Repo Does
+
+- ✅ Extracts technical passages from the official Kubernetes docs  
+- ✅ Builds a FAISS index with dense vector search  
+- ✅ Fine-tunes a **cross-encoder** on query–passage pairs  
+- ✅ Uses the cross-encoder to **rerank** RAG results before LLM inference  
+- ✅ Fully containerized: each step runnable via Docker  
+- ✅ Local dev support for faster iteration
+
+---
+
+## 🔥 Why Use a Cross-Encoder?
+
+Most vector databases retrieve results based on **bi-encoder** similarity—fast, scalable, and imprecise.
+
+A **cross-encoder**, in contrast, evaluates the relevance of a *(query, passage)* pair by jointly encoding both with full attention. That gives you **high-precision reranking** at the cost of throughput—perfect for reordering top-k hits before LLM use.
+
+> Example:
+> - Query: *"How do I create a Kubernetes Job?"*
+> - Bi-encoder top-3: irrelevant references to CronJobs and DaemonSets
+> - Cross-encoder reranking: pushes the actual Job creation doc to top-1
+
+---
+
+## 🧪 Prerequisites for Local Run
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .rag-env
+source .rag-env/bin/activate
+pip install --upgrade pip
+Install dependencies:
+
+```bash
+pip install "transformers[torch]" sentence-transformers faiss-cpu
+```
+
+---
+
+## 📥 Download Kubernetes Documentation
+
+Clone the docs repository:
+
+```bash
+export GIT_LOCAL_FOLDER=~/Documents
+cd ${GIT_LOCAL_FOLDER}
+git clone https://github.com/kubernetes/website.git
+cd website/content/en/docs
+```
+
+Set the environment variable:
+
+```bash
+export DOCS_HOME_FOLDER=${GIT_LOCAL_FOLDER}
+# Final path to docs: ${DOCS_HOME_FOLDER}/website/content/en/docs
+```
+
+---
+
+> ⚠️ **Apple Silicon Users (M1/M2):**  
+> Some steps may fail on ARM architecture due to missing binary support.  
+> To run AMD64 Docker containers, install Rosetta 2:
+
+```bash
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+This enables support for x86/amd64 binaries within Docker and ensures compatibility with many Python and ML libraries that do not yet support ARM64 natively.
+
+---
+
+> ✅ The following steps **can** be run on ARM architecture without Docker:
+> - Creating a JSON file of passages
+> - Creating a FAISS Index
+
+---
+
+## 🔨 Workflow
+
+You can run each step either using **Docker** or **locally**.
+
+---
+
+### 1️⃣ Create JSON File of Passages
+
+**Using Docker:**
+
+```bash
+docker build --platform=linux/amd64 -f docker/CreatePassagesDockerfile -t createpassages .
+docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createpassages
+```
+
+**Run Locally:**
+
+```bash
+export BASE_FOLDER=${DOCS_HOME_FOLDER}
+python scripts/create_k8s_packages_json.py
+```
+
+---
+
+### 2️⃣ Create FAISS Index
+
+**Using Docker:**
+
+```bash
+docker build --platform=linux/amd64 -f docker/CreateFAISSIndexDockerfile -t createfaissindex .
+docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data createfaissindex
+```
+
+**Run Locally:**
+
+```bash
+export BASE_FOLDER=${DOCS_HOME_FOLDER}
+python scripts/faiss_index.py
+```
+
+---
+
+### 3️⃣ Fine-tune Cross Encoder
+
+**Using Docker:**
+
+```bash
+docker build --platform=linux/amd64 -f docker/FineTuneCrossEncoderDockerfile -t cross-encoder-tuning-runner .
+docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data cross-encoder-tuning-runner
+```
+
+**Run Locally:**
+
+This may lead to segmentation faults on Mac
+```bash
+
+export BASE_FOLDER=${DOCS_HOME_FOLDER}
+python scripts/fine_tune_cross_encoder.py
+```
+
+---
+
+### 4️⃣ Run RAG with Cross Encoder and LLM
+
+**Using Docker:**
+
+```bash
+docker build --platform=linux/amd64 -f docker/RAGCrossEncodeLLMDockerfile -t rag-runner .
+docker run -e BASE_FOLDER=/app/data -v ${DOCS_HOME_FOLDER}:/app/data rag-runner
+```
+
+
+**Run Locally:**
+
+This may lead to segmentation faults on Mac
+
+```bash
+
+export BASE_FOLDER=${DOCS_HOME_FOLDER}
+python scripts/query_faiss_index.py
+```
+
+---
