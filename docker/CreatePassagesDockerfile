@@ -17,4 +17,4 @@ RUN apt-get update || true && \
 WORKDIR /app
 COPY . /app
 
-CMD ["python", "create_k8s_packages_json.py"]
+CMD ["python", "scripts/create_k8s_packages_json.py"]
