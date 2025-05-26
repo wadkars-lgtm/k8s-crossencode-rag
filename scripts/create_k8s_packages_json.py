@@ -8,6 +8,9 @@ base_dir = Path(f"{BASE_FOLDER}/website/content/en/docs")
 
 # Function to extract passages from markdown files
 '''
+This breaks LLMs. You must chunk source docs into coherent 100–200 word passages, not raw paragraph splits.
+'''
+'''
 def extract_passages_from_markdown(md_path, min_words=20, max_words=150):
     with open(md_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -20,9 +23,7 @@ def extract_passages_from_markdown(md_path, min_words=20, max_words=150):
     return passages
 '''
 
-'''
-This breaks LLMs. You must chunk source docs into coherent 100–200 word passages, not raw paragraph splits.
-'''
+
 def extract_passages_from_markdown(md_path, min_words=50, max_words=200):
     with open(md_path, 'r', encoding='utf-8') as f:
         content = f.read()
