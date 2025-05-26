@@ -19,4 +19,4 @@ RUN apt-get update || true && \
 WORKDIR /app
 COPY . /app
 
-CMD ["python", "faiss_index.py"]
+CMD ["python", "scripts/faiss_index.py"]
