@@ -1,50 +1,6 @@
-Improve the **precision of RAG (Retrieval-Augmented Generation)** using cross-encoders to rerank semantically retrieved documents.
+Improve the **precision of RAG (Retrieval-Augmented Generation)** using cross-encoders to rerank semantically retrieved documents (Using Langchain).
 
-> **Use case:** You’ve embedded your docs and built a vector search pipeline. But your top-k hits are still noisy. That’s because standard bi-encoder RAG often retrieves *relevant-looking garbage*. This repo injects a cross-encoder scoring step to **rerank results using deeper semantic understanding**, improving downstream LLM output.
-
-![Using Cross Encoders to refine ranking on retrieved results](./assets/cross-encoder.png)
-
----
-
-## ⚙️ What This Repo Does
-
-- ✅ Extracts technical passages from the official Kubernetes docs  
-- ✅ Builds a FAISS index with dense vector search  
-- ✅ Fine-tunes a **cross-encoder** on query–passage pairs  
-- ✅ Uses the cross-encoder to **rerank** RAG results before LLM inference  
-- ✅ Fully containerized: each step runnable via Docker  
-- ✅ Local dev support for faster iteration
-
----
-
-## 🔥 Why Use a Cross-Encoder?
-
-Most vector databases retrieve results based on **bi-encoder** similarity—fast, scalable, and imprecise.
-
-A **cross-encoder**, in contrast, evaluates the relevance of a *(query, passage)* pair by jointly encoding both with full attention. That gives you **high-precision reranking** at the cost of throughput—perfect for reordering top-k hits before LLM use.
-
-> Example:
-> - Query: *"How do I create a Kubernetes Job?"*
-> - Bi-encoder top-3: irrelevant references to CronJobs and DaemonSets
-> - Cross-encoder reranking: pushes the actual Job creation doc to top-1
-
----
-## 📚 Related Article
-
-Want to understand the **why** behind this code?
-
-Check out the accompanying article on Substack:
-
-> **🧠 When and Why to Use Shared vs. Separate Encoders**  
-> [https://sameerwadkar.substack.com/p/when-and-why-to-use-shared-vs-separate](https://sameerwadkar.substack.com/p/when-and-why-to-use-shared-vs-separate)
-
-This article explains:
-- Why general-purpose embeddings often fall short in technical or niche domains  
-- How cross-encoders improve the precision of RAG systems through semantic reranking  
-- When to apply thresholding to detect irrelevant retrievals  
-- Why fine-tuning a cross-encoder is often a more efficient solution than retraining bi-encoders
-
-This repository puts those ideas into practice using Kubernetes documentation as a real-world use case.
+For design section refer to the [parent document](./README.md). This document's purpose is to serve as a runbook for examples refactored to use Langchain.
 
 ---
 
